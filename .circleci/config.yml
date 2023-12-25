@@ -20,8 +20,8 @@ workflows:
           context: terraform
           requires:
             - terraform/plan
-      - terraform/destroy:
+      - terraform/apply:
           attach-workspace: true
           context: terraform
           requires:
-            - terraform/validate
+            - terraform/plan
