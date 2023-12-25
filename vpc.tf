@@ -9,45 +9,39 @@ terraform {
   required_version = ">= 0.12"
 }
 
+provider "aws" {
+  region = "ap-south-1"
+  
+}
 
-provider "aws"{
-    region="ap-south-1"
-    alias = "env"
+
+// VPC
+resource "aws_vpc" "Test-vpc" {
+  cidr_block = "10.10.0.0/16"
 }
-resource "aws_vpc" "demo-vpc" {
-    cidr_block="10.10.0.0/16"
-    tags={
-        Name:"demo_vpc"
-    }
-}
-resource "aws_subnet" "main" {
-  vpc_id     = aws_vpc.demo-vpc.id
-  cidr_block = "10.10.0.0/24"
+
+// Subnet
+resource "aws_subnet" "Test_Subnet" {
+  vpc_id     = aws_vpc.Test-vpc.id
+  cidr_block = "10.10.1.0/24"
 
   tags = {
     Name = "Main"
   }
 }
-resource "aws_internet_gateway" "gw" {
-  vpc_id = aws_vpc.demo-vpc.id
 
-  tags = {
-    Name = "main"
-  }
-}
+// Security Group
+resource "aws_security_group" "Test_secgrp" {
+  name = "Test_secgrp"
 
-resource "aws_security_group" "demo-secgrp" {
-  name        = "allow_tls"
-  description = "Allow TLS inbound traffic"
-  vpc_id      = aws_vpc.demo-vpc.id
+  vpc_id = aws_vpc.Test-vpc.id
 
   ingress {
-    description      = "TLS from VPC"
-    from_port        = 443
-    to_port          = 443
+    from_port        = 22
+    to_port          = 22
     protocol         = "tcp"
-    cidr_blocks      = [aws_vpc.demo-vpc.cidr_block]
-
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 
   egress {
@@ -63,23 +57,11 @@ resource "aws_security_group" "demo-secgrp" {
   }
 }
 
-resource "aws_route_table" "example" {
-  vpc_id = aws_vpc.demo-vpc.id
-
-  route {
-    cidr_block = "10.0.1.0/24"
-    gateway_id = aws_internet_gateway.gw.id
-  }
-
-  tags = {
-    Name = "example"
-  }
-}
-
+// EC2 Instance
 resource "aws_instance" "Test-server" {
   ami                    = "ami-0a0f1259dd1c90938"
   key_name               = "Test"
-  instance_type          = "t3.micro"
-  subnet_id              = aws_subnet.main.id
-  vpc_security_group_ids = [aws_security_group.demo-secgrp.id]
+  instance_type          = "t2.micro"
+  subnet_id              = aws_subnet.Test_Subnet.id
+  vpc_security_group_ids = [aws_security_group.Test_secgrp.id]
 }
