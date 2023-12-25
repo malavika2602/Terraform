@@ -1,32 +1,27 @@
 version: 2.1
 
-jobs:
-  terraform:
-    docker:
-      - image: hashicorp/terraform:latest
-
-    environment:
-      AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
-      AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
-      AWS_DEFAULT_REGION: "ap-south-1"  
-
-    steps:
-      - checkout
-
-      - run:
-          name: Initialize Terraform
-          command: terraform init
-
-      - run:
-          name: Terraform Plan
-          command: terraform plan
-
-      - run:
-          name: Terraform Apply
-          command: terraform apply -auto-approve
+orbs:
+  terraform: circleci/terraform@3.2.1
 
 workflows:
   version: 2
-  build:
+  apply_infra:
     jobs:
-      - terraform
+      - terraform/validate:
+          context: terraform
+
+      - terraform/plan:
+          checkout: true
+          context: terraform
+          persist-workspace: true
+          requires:
+            - terraform/validate
+
+      - terraform/apply:
+          attach-workspace: true
+          context: terraform
+          filters:
+            branches:
+              only: master
+          requires:
+            - terraform/plan
