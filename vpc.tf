@@ -57,6 +57,20 @@ resource "aws_security_group" "Test_secgrp" {
   }
 }
 
+//route table
+resource "aws_route_table" "example" {
+  vpc_id = aws_vpc.demo-vpc.id
+
+  route {
+    cidr_block = "10.0.1.0/24"
+    gateway_id = aws_internet_gateway.gw.id
+  }
+
+  tags = {
+    Name = "example"
+  }
+}
+
 // EC2 Instance
 resource "aws_instance" "Test-server" {
   ami                    = "ami-0a0f1259dd1c90938"
